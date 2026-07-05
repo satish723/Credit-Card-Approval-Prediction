@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Credit Card Approval Prediction</title>
+  </head>
+  <body>
+    <h1>Upload CSV to predict</h1>
+    <form method="post" action="/predict" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".csv" required>
+      <button type="submit">Upload & Predict</button>
+    </form>
+    {% if prediction %}
+      <p><strong>{{ prediction }}</strong></p>
+    {% endif %}
+    <p>Note: CSV should contain the same feature columns used during training. If your file includes a target column, place it last.</p>
+  </body>
+</html>
