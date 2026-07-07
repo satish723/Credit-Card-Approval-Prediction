@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Predictions</title>
+  </head>
+  <body>
+    <h1>Predictions</h1>
+    {% for table in tables %}
+      {{ table | safe }}
+    {% endfor %}
+    <p><a href="/">Upload another file</a></p>
+  </body>
+</html>
