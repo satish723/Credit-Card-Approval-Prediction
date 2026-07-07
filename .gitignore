@@ -5,4 +5,4 @@ venv/
 models/*.joblib
 models/*.pkl
 *.pyc
-creditcard.csv
+creditcard*.csv
