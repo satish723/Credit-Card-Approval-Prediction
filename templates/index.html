@@ -5,14 +5,224 @@
     <title>Credit Card Approval Prediction</title>
   </head>
   <body>
-    <h1>Upload CSV to predict</h1>
-    <form method="post" action="/predict" enctype="multipart/form-data">
-      <input type="file" name="file" accept=".csv" required>
-      <button type="submit">Upload & Predict</button>
-    </form>
-    {% if prediction %}
-      <p><strong>{{ prediction }}</strong></p>
+    <div class="page-shell">
+      <header>
+        <h1>Credit Card Approval Prediction</h1>
+        <p>Upload your feature CSV and see a clean summary plus paged results on the same page.</p>
+      </header>
+
+      <section class="upload-card">
+        <h2>Upload Data</h2>
+        <form method="post" action="/predict" enctype="multipart/form-data">
+          <label class="file-label">
+            <span>Select CSV file</span>
+            <input type="file" name="file" accept=".csv" required>
+          </label>
+          <button type="submit" class="primary-button">Upload & Predict</button>
+        </form>
+        <p class="note">CSV should contain the same feature columns used during training. If your file includes a target column, place it last.</p>
+      </section>
+
+      {% if prediction %}
+      <section class="message-card">
+        <p>{{ prediction }}</p>
+      </section>
+      {% endif %}
+
+      {% if predictions %}
+      <section class="result-card">
+        <div class="result-header">
+          <div>
+            <h2>Overall Result</h2>
+            <p>Total predictions: <strong>{{ total }}</strong></p>
+          </div>
+          <div class="summary-pill">Showing 10 per page</div>
+        </div>
+
+        <div class="table-shell">
+          <table id="prediction-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Predicted Value</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button id="prev-page" class="secondary-button" onclick="changePage(-1)">Previous</button>
+          <span id="page-display"></span>
+          <button id="next-page" class="secondary-button" onclick="changePage(1)">Next</button>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+        color: #1f2937;
+      }
+      .page-shell {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header {
+        text-align: center;
+        padding: 18px 0 12px;
+      }
+      header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(2rem, 2.3vw, 2.8rem);
+        letter-spacing: -0.03em;
+      }
+      header p {
+        margin: 0;
+        color: #4b5563;
+      }
+      .upload-card,
+      .message-card,
+      .result-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .upload-card h2,
+      .result-card h2 {
+        margin-top: 0;
+        font-size: 1.3rem;
+      }
+      .file-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 420px;
+        padding: 14px 18px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        margin-bottom: 14px;
+        cursor: pointer;
+        color: #334155;
+        background: #f8fafc;
+      }
+      .file-label input {
+        display: none;
+      }
+      .primary-button,
+      .secondary-button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      .primary-button {
+        color: #ffffff;
+        background: #4338ca;
+      }
+      .secondary-button {
+        color: #334155;
+        background: #eff6ff;
+      }
+      .note {
+        margin-top: 12px;
+        color: #475569;
+      }
+      .message-card p {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+      .summary-pill {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .table-shell {
+        overflow-x: auto;
+        margin-top: 18px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 14px 12px;
+      }
+      th {
+        color: #0f172a;
+        background: #eef2ff;
+      }
+      tr:nth-child(even) {
+        background: #f8fafc;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 14px;
+        margin-top: 16px;
+      }
+      #page-display {
+        font-weight: 600;
+        color: #334155;
+      }
+    </style>
+
+    {% if predictions %}
+    <script>
+      const predictions = {{ predictions | tojson | safe }};
+      const pageSize = 10;
+      let currentPage = 1;
+      const tableBody = document.querySelector('#prediction-table tbody');
+      const pageDisplay = document.getElementById('page-display');
+      const prevBtn = document.getElementById('prev-page');
+      const nextBtn = document.getElementById('next-page');
+
+      function renderPage() {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageData = predictions.slice(start, end);
+        tableBody.innerHTML = '';
+
+        pageData.forEach((value, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${start + index + 1}</td><td>${value}</td>`;
+          tableBody.appendChild(row);
+        });
+
+        const pageCount = Math.ceil(predictions.length / pageSize) || 1;
+        pageDisplay.textContent = `Page ${currentPage} of ${pageCount}`;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === pageCount;
+      }
+
+      function changePage(delta) {
+        const pageCount = Math.ceil(predictions.length / pageSize) || 1;
+        currentPage = Math.min(Math.max(1, currentPage + delta), pageCount);
+        renderPage();
+      }
+
+      renderPage();
+    </script>
     {% endif %}
-    <p>Note: CSV should contain the same feature columns used during training. If your file includes a target column, place it last.</p>
   </body>
 </html>

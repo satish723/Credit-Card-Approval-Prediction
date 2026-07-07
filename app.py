@@ -52,8 +52,13 @@ def predict():
     except Exception:
         return render_template("index.html", prediction="Prediction failed: feature mismatch or bad data")
 
-    result = ", ".join(str(int(x)) for x in predictions)
-    return render_template("index.html", prediction=f"Predictions: {result}")
+    predictions = [int(x) for x in predictions]
+    return render_template(
+        "index.html",
+        prediction="Prediction completed successfully.",
+        predictions=predictions,
+        total=len(predictions)
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
